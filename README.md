@@ -11,7 +11,7 @@ Interfaz Moderna: Diseño responsivo creado con Bootstrap 5 y Font Awesome.
 
 Sistema Anti-Fallos: Incluye lógica de respaldo (fallback) para ofrecer estimaciones base si la API no devuelve resultados o hay problemas de conexión.
 
-🛠️ Tecnologías Utilizadas
+Tecnologías Utilizadas
 Backend: Java 21 & Spring Boot 3.4.2
 
 Frontend: Thymeleaf, HTML5, CSS3 (Bootstrap 5)
