@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habitax | Predictor Inmobiliario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f8fafc; min-height: 100vh; }
+        .main-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 2.5rem; }
+        .form-control { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; color: white; border-radius: 12px; }
+        .btn-predict { background: #10b981; border: none; font-weight: 700; border-radius: 12px; padding: 1rem; }
+        .result-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 1.5rem; margin-top: 2rem; }
+        .error-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; border-radius: 12px; padding: 1rem; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-8">
+            <div class="main-card shadow-lg">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-success"><i class="fa-solid fa-house-chimney-chart"></i> HABITAX</h2>
+                    <p class="text-muted small">Análisis de mercado con Idealista API</p>
+                </div>
+
+                <form th:action="@{/predecir}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Ciudad</label>
+                        <input type="text" name="zona" class="form-control" placeholder="Ej: Madrid" th:value="${zonaSeleccionada}" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-muted">Superficie (m²)</label>
+                        <input type="number" name="metros" class="form-control" placeholder="Ej: 80" th:value="${metrosIngresados}" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-predict w-100 text-white">
+                        CALCULAR PRECIO ESTIMADO
+                    </button>
+                </form>
+
+                <div th:if="${resultado != null}" class="result-box text-center">
+                    <span class="text-success small fw-bold">PREDICCIÓN PARA <span th:text="${zonaSeleccionada}"></span></span>
+                    <h2 class="fw-bold mt-2"><span th:text="${#numbers.formatDecimal(resultado, 0, 'POINT', 0, 'COMMA')}"></span> €</h2>
+                    <p class="text-muted small mb-0">Basado en <span th:text="${metrosIngresados}"></span> m²</p>
+                </div>
+
+                <div th:if="${error}" class="error-box text-center">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    <span th:text="${error}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
