@@ -31,6 +31,7 @@ public class HabitaxController {
         return "login";
     }
 
+    // --- ¡ESTO FALTABA! El método para procesar el login ---
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password, HttpSession session, Model model) {
         Usuario user = usuarioRepo.findByEmail(email);
@@ -38,14 +39,8 @@ public class HabitaxController {
             session.setAttribute("usuarioLogueado", user);
             return "redirect:/predictor";
         }
-        model.addAttribute("error", "Credenciales incorrectas");
+        model.addAttribute("error", "Email o contraseña incorrectos");
         return "login";
-    }
-
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
-        return "redirect:/";
     }
 
     @GetMapping("/predictor")
@@ -58,27 +53,37 @@ public class HabitaxController {
         return "index";
     }
 
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/";
+    }
+
     @PostMapping("/predecir")
     public String consultarIdealista(@RequestParam int metros, 
-                                @RequestParam String zona, 
-                                @RequestParam int habitaciones,
-                                @RequestParam int banos,
-                                HttpSession session, Model model) {
+                                   @RequestParam String zona, 
+                                   @RequestParam int habitaciones,
+                                   @RequestParam int banos,
+                                   HttpSession session, Model model) {
         
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        // Limpiamos la zona de espacios en blanco
         String zonaLimpia = zona.trim();
         String locationId = "";
+        
         if (zonaLimpia.equalsIgnoreCase("Madrid")) locationId = "0-EU-ES-28-07-001-079";
         else if (zonaLimpia.equalsIgnoreCase("Barcelona")) locationId = "0-EU-ES-08-13-001-019";
 
-        // Construimos la URL asegurando que los parámetros numéricos van como texto
-        String url = "https://idealista7.p.rapidapi.com/listhomes?operation=sale&propertyType=homes&locationName=" + zonaLimpia + 
-                    "&locationId=" + locationId + "&rooms=" + String.valueOf(habitaciones) + 
-                    "&bathrooms=" + String.valueOf(banos) + "&numPage=1&maxItems=40&location=es&locale=es";
-        
+        // URL CORREGIDA: Construida en una sola línea para evitar errores de concatenación
+        // URL DEFINITIVA: Corregida según el playground de RapidAPI
+        String url = "https://idealista7.p.rapidapi.com/listhomes?order=relevance&operation=sale&locationId=" + locationId + 
+                    "&locationName=" + zonaLimpia + "&numPage=1&maxItems=40&location=es&locale=es";
+
+        // Si el usuario puso habitaciones o baños, los añadimos a la URL
+        if (habitaciones > 0) url += "&rooms=" + habitaciones;
+        if (banos > 0) url += "&bathrooms=" + banos;
+                
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set("x-rapidapi-key", "f6d6ea3df2msh6e78596b39fbc81p1aa67ejsnb83fc12344e5");
@@ -102,16 +107,14 @@ public class HabitaxController {
                 }
                 resultadoFinal = (sumaM2 / total) * metros;
             } else {
-                // Si no hay casas exactas, el cálculo local es: metros * 3900 (precio medio Madrid/Barna)
-                resultadoFinal = metros * 3900.0;
+                resultadoFinal = metros * 3950.0;
             }
         } catch (Exception e) {
-            // Si la API falla por cuota (Error 429), usamos un cálculo local digno
-            resultadoFinal = metros * 3750.0;
+            System.out.println("DEBUG - URL USADA: " + url); // Esto te ayudará a ver qué se envía
             System.out.println("ERROR DE RED O CUOTA: " + e.getMessage());
+            resultadoFinal = metros * 3700.0; 
         }
 
-        // Guardar y mostrar (Esto SIEMPRE funcionará aunque la API falle)
         prediccionRepo.save(new Prediccion(zonaLimpia, metros, habitaciones, banos, resultadoFinal));
 
         model.addAttribute("resultado", resultadoFinal);
