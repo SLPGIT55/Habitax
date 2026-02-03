@@ -26,8 +26,6 @@ public class HabitaxController {
     @Autowired
     private UsuarioRepository usuarioRepo;
 
-    // --- ACCESO Y SESIÓN ---
-
     @GetMapping("/")
     public String loginPage() {
         return "login";
@@ -40,7 +38,7 @@ public class HabitaxController {
             session.setAttribute("usuarioLogueado", user);
             return "redirect:/predictor";
         }
-        model.addAttribute("error", "Email o contraseña incorrectos");
+        model.addAttribute("error", "Credenciales incorrectas");
         return "login";
     }
 
@@ -49,8 +47,6 @@ public class HabitaxController {
         session.invalidate();
         return "redirect:/";
     }
-
-    // --- PANEL DEL PREDICTOR ---
 
     @GetMapping("/predictor")
     public String predictor(HttpSession session, Model model) {
@@ -63,18 +59,25 @@ public class HabitaxController {
     }
 
     @PostMapping("/predecir")
-    public String consultarIdealista(@RequestParam int metros, @RequestParam String zona, HttpSession session, Model model) {
+    public String consultarIdealista(@RequestParam int metros, 
+                                @RequestParam String zona, 
+                                @RequestParam int habitaciones,
+                                @RequestParam int banos,
+                                HttpSession session, Model model) {
+        
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        // Mapeo exacto de IDs para que la API no se pierda
+        // Limpiamos la zona de espacios en blanco
+        String zonaLimpia = zona.trim();
         String locationId = "";
-        if (zona.equalsIgnoreCase("Madrid")) locationId = "0-EU-ES-28-07-001-079";
-        else if (zona.equalsIgnoreCase("Barcelona")) locationId = "0-EU-ES-08-13-001-019";
+        if (zonaLimpia.equalsIgnoreCase("Madrid")) locationId = "0-EU-ES-28-07-001-079";
+        else if (zonaLimpia.equalsIgnoreCase("Barcelona")) locationId = "0-EU-ES-08-13-001-019";
 
-        // URL con el orden exacto de tu captura de RapidAPI
-        String url = "https://idealista7.p.rapidapi.com/listhomes?order=relevance&operation=sale&locationId=" + locationId + 
-                    "&locationName=" + zona + "&numPage=1&maxItems=40&location=es&locale=es";
+        // Construimos la URL asegurando que los parámetros numéricos van como texto
+        String url = "https://idealista7.p.rapidapi.com/listhomes?operation=sale&propertyType=homes&locationName=" + zonaLimpia + 
+                    "&locationId=" + locationId + "&rooms=" + String.valueOf(habitaciones) + 
+                    "&bathrooms=" + String.valueOf(banos) + "&numPage=1&maxItems=40&location=es&locale=es";
         
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -86,57 +89,49 @@ public class HabitaxController {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
             
-            // Extraemos la lista de casas
             List<Map<String, Object>> casas = (List<Map<String, Object>>) response.getBody().get("elementList");
             
             if (casas != null && !casas.isEmpty()) {
                 double sumaM2 = 0;
-                int contador = 0;
+                int total = 0;
                 for (Map<String, Object> casa : casas) {
                     if (casa.get("price") != null && casa.get("size") != null) {
-                        double p = Double.parseDouble(casa.get("price").toString());
-                        double s = Double.parseDouble(casa.get("size").toString());
-                        if (s > 0) {
-                            sumaM2 += (p / s);
-                            contador++;
-                        }
+                        sumaM2 += (Double.parseDouble(casa.get("price").toString()) / Double.parseDouble(casa.get("size").toString()));
+                        total++;
                     }
                 }
-                resultadoFinal = (sumaM2 / contador) * metros;
+                resultadoFinal = (sumaM2 / total) * metros;
             } else {
-                // Si la lista viene vacía, usamos el precio de mercado actual de Madrid (aprox 4000€/m2)
-                resultadoFinal = metros * 4000.0;
+                // Si no hay casas exactas, el cálculo local es: metros * 3900 (precio medio Madrid/Barna)
+                resultadoFinal = metros * 3900.0;
             }
         } catch (Exception e) {
-            // Si hay error de red, usamos un fallback de seguridad
-            resultadoFinal = metros * 3800.0;
-            System.out.println("DEBUG API ERROR: " + e.getMessage());
+            // Si la API falla por cuota (Error 429), usamos un cálculo local digno
+            resultadoFinal = metros * 3750.0;
+            System.out.println("ERROR DE RED O CUOTA: " + e.getMessage());
         }
 
-        // --- GUARDAR Y MOSTRAR ---
-        prediccionRepo.save(new Prediccion(zona, metros, resultadoFinal));
+        // Guardar y mostrar (Esto SIEMPRE funcionará aunque la API falle)
+        prediccionRepo.save(new Prediccion(zonaLimpia, metros, habitaciones, banos, resultadoFinal));
 
         model.addAttribute("resultado", resultadoFinal);
-        model.addAttribute("zonaSeleccionada", zona);
+        model.addAttribute("zonaSeleccionada", zonaLimpia);
         model.addAttribute("metrosIngresados", metros);
+        model.addAttribute("habitaciones", habitaciones);
+        model.addAttribute("banos", banos);
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("historial", prediccionRepo.findAll());
         
         return "index";
-}
-
-    // --- REGISTRO DE USUARIOS ---
+    }
 
     @GetMapping("/registro")
-    public String mostrarRegistro() {
-        return "registro";
-    }
+    public String mostrarRegistro() { return "registro"; }
 
     @PostMapping("/registro")
     public String registrarUsuario(@RequestParam String nombre, @RequestParam String email, @RequestParam String password, Model model) {
-        // Guardamos el usuario en H2
         usuarioRepo.save(new Usuario(nombre, email, password));
-        model.addAttribute("mensajeExito", "¡Usuario " + nombre + " registrado! Ya puedes iniciar sesión.");
+        model.addAttribute("mensajeExito", "¡Cuenta creada! Ya puedes entrar.");
         return "login";
     }
 }
