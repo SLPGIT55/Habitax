@@ -13,7 +13,7 @@ public class Usuario {
 
     private String nombre;
     private String email;
-    private String password; // En un proyecto real esto iría encriptado
+    private String password; 
 
     public Usuario() {}
 

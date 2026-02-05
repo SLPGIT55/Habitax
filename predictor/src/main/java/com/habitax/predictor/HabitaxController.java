@@ -31,7 +31,6 @@ public class HabitaxController {
         return "login";
     }
 
-    // --- ¡ESTO FALTABA! El método para procesar el login ---
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password, HttpSession session, Model model) {
         Usuario user = usuarioRepo.findByEmail(email);
@@ -75,8 +74,6 @@ public class HabitaxController {
         if (zonaLimpia.equalsIgnoreCase("Madrid")) locationId = "0-EU-ES-28-07-001-079";
         else if (zonaLimpia.equalsIgnoreCase("Barcelona")) locationId = "0-EU-ES-08-13-001-019";
 
-        // URL CORREGIDA: Construida en una sola línea para evitar errores de concatenación
-        // URL DEFINITIVA: Corregida según el playground de RapidAPI
         String url = "https://idealista7.p.rapidapi.com/listhomes?order=relevance&operation=sale&locationId=" + locationId + 
                     "&locationName=" + zonaLimpia + "&numPage=1&maxItems=40&location=es&locale=es";
 
@@ -110,7 +107,7 @@ public class HabitaxController {
                 resultadoFinal = metros * 3950.0;
             }
         } catch (Exception e) {
-            System.out.println("DEBUG - URL USADA: " + url); // Esto te ayudará a ver qué se envía
+            System.out.println("DEBUG - URL USADA: " + url); 
             System.out.println("ERROR DE RED O CUOTA: " + e.getMessage());
             resultadoFinal = metros * 3700.0; 
         }
