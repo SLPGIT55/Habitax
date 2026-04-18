@@ -9,6 +9,8 @@
         .logo-habitax { color: #ff6b10; font-family: 'Times New Roman', serif; font-weight: bold; font-size: 2.5rem; }
         .btn-orange { background: #ff6b10; color: white; border-radius: 10px; font-weight: bold; }
         .card-registro { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        /* Estilo para el área del mensaje de error */
+        #passwordError { display: block; min-height: 1.2rem; margin-bottom: 1rem; text-align: left; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -18,17 +20,28 @@
             <h1 class="logo-habitax mb-4">HABITAX</h1>
             <div class="card-registro">
                 <h4 class="mb-4">Crear Cuenta</h4>
-                <form th:action="@{/registro}" method="post">
+                
+                <form id="registroForm" th:action="@{/registro}" method="post">
+                    
                     <input type="text" name="nombre" class="form-control mb-3" placeholder="Nombre completo" required>
+                    
                     <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
-                    <input type="password" name="password" class="form-control mb-3" placeholder="Contraseña" required>
+                    
+                    <input type="password" id="password" name="password" class="form-control mb-1" placeholder="Contraseña" required>
+                    
+                    <span id="passwordError"></span>
+                    
                     <button type="submit" class="btn btn-orange w-100">REGISTRARSE</button>
                 </form>
+                
                 <hr>
-                <a href="/" class="text-muted small">Volver al inicio</a>
+                <a th:href="@{/}" class="text-muted small">Volver al inicio</a>
             </div>
         </div>
     </div>
 </div>
+
+<script th:src="@{/js/validaciones.js}"></script>
+
 </body>
 </html>
