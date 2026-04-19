@@ -1,21 +1,39 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const registroForm = document.getElementById('registroForm');
-    
-    if (registroForm) {
-        registroForm.addEventListener('submit', function(event) {
-            const password = document.getElementById('password').value;
-            const errorMensaje = document.getElementById('passwordError');
-            
-            // Expresión regular: 8 caracteres, 1 número, 1 símbolo especial
-            const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    const selectProvincia = document.getElementById('provincia');
+    const selectZona = document.getElementById('zona');
 
-            if (!regex.test(password)) {
-                event.preventDefault(); // Detener envío
-                errorMensaje.textContent = " La contraseña debe tener 8 caracteres, un número y un símbolo.";
-                errorMensaje.style.color = "#dc3545";
-            } else {
-                errorMensaje.textContent = "";
+    if (selectProvincia) {
+        selectProvincia.addEventListener('change', function() {
+            const provincia = this.value;
+
+            if (!provincia) {
+                selectZona.innerHTML = '<option value="">Primero elige provincia...</option>';
+                return;
             }
+
+            selectZona.innerHTML = '<option value="">Cargando barrios reales...</option>';
+
+            fetch('/api/zonas?provincia=' + encodeURIComponent(provincia))
+                .then(response => {
+                    if (!response.ok) throw new Error("Fallo en el servidor");
+                    return response.json();
+                })
+                .then(data => {
+                    selectZona.innerHTML = '<option value="">Selecciona un barrio</option>';
+                    // Verificamos que 'data' sea una lista
+                    if (Array.isArray(data)) {
+                        data.forEach(barrio => {
+                            let option = document.createElement('option');
+                            option.value = barrio;
+                            option.text = barrio;
+                            selectZona.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    selectZona.innerHTML = '<option value="">Error al cargar datos</option>';
+                });
         });
     }
 });
