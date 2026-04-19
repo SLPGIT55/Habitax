@@ -11,7 +11,6 @@
         .logo-habitax { color: #ff6b10; font-family: 'Times New Roman', serif; font-weight: bold; font-size: 3.5rem; }
         .text-orange { color: #ff6b10 !important; }
         
-        /* Estilo para las fotos de edificios laterales */
         .building-card {
             background: white;
             border-radius: 15px;
@@ -53,16 +52,29 @@
         <div class="col-lg-6">
             <div class="text-center mb-5">
                 <h1 class="logo-habitax">HABITAX</h1>
-                <p class="text-muted fw-bold">HOLA, <span th:text="${nombreUsuario}" class="text-orange">Sandra</span> <i class="fa-solid fa-circle-check text-success"></i></p>
+                <p class="text-muted fw-bold">HOLA, <span th:text="${nombreUsuario}" class="text-orange">Usuario</span> <i class="fa-solid fa-circle-check text-success"></i></p>
             </div>
 
             <div class="main-card">
                 <form th:action="@{/predecir}" method="post">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Ubicación</label>
-                            <input type="text" name="zona" class="form-control" placeholder="Madrid" th:value="${zonaSeleccionada}" required>
+                            <label class="form-label small fw-bold">Provincia</label>
+                            <select id="provincia" class="form-control">
+                                <option value="">Selecciona Provincia</option>
+                                <option th:each="prov : ${provincias}" 
+                                        th:value="${prov}" 
+                                        th:text="${prov}"></option>
+                            </select>
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Barrio / Zona</label>
+                            <select id="zona" name="zona" class="form-control" required>
+                                <option value="" th:text="${zonaSeleccionada != null ? zonaSeleccionada : 'Primero elige provincia...'}"></option>
+                            </select>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Metros (m²)</label>
                             <input type="number" name="metros" class="form-control" placeholder="80" th:value="${metrosIngresados}" required>
@@ -80,7 +92,7 @@
                 </form>
 
                 <div th:if="${resultado != null}" class="mt-4 p-4 border border-warning rounded-4 bg-light text-center">
-                    <p class="text-muted mb-1 small fw-bold">VALOR ESTIMADO</p>
+                    <p class="text-muted mb-1 small fw-bold">VALOR ESTIMADO EN <span class="text-orange" th:text="${zonaSeleccionada}"></span></p>
                     <h1 class="text-orange fw-bold mb-0">
                         <span th:text="${#numbers.formatDecimal(resultado, 0, 'POINT', 0, 'COMMA')}"></span> €
                     </h1>
@@ -131,6 +143,8 @@
 
     </div>
 </div>
+
+<script th:src="@{/js/validaciones.js}"></script>
 
 </body>
 </html>
