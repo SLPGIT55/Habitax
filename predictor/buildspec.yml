@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto21
+
+  pre_build:
+    commands:
+      - echo "Maven version check..."
+      - cd predictor
+      - mvn -version
+
+  build:
+    commands:
+      - echo "Building Habitax JAR..."
+      - mvn clean package -DskipTests
+      - echo "Build completed on `date`"
+
+  post_build:
+    commands:
+      - echo "Listing generated JAR:"
+      - ls -lh target/*.jar
+      - echo "Renaming to application.jar for Elastic Beanstalk..."
+      - cp target/predictor-*.jar target/application.jar
+      - ls -lh target/application.jar
+
+artifacts:
+  files:
+    - predictor/target/application.jar
+  discard-paths: yes
+
+cache:
+  paths:
+    - '/root/.m2/**/*'
