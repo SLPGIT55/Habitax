@@ -13,7 +13,7 @@ public class Usuario {
 
     private String nombre;
     private String email;
-    private String password; 
+    private String password;
 
     public Usuario() {}
 
@@ -24,6 +24,8 @@ public class Usuario {
     }
 
     // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getNombre() { return nombre; }
     public void setNombre(String n) { this.nombre = n; }
     public String getEmail() { return email; }
