@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -34,8 +36,15 @@ public class HabitaxController {
     // BCrypt encoder para cifrar/verificar contrasenas
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    private final String API_KEY = "f6d6ea3df2msh6e78596b39fbc81p1aa67ejsnb83fc12344e5";
-    private final String API_HOST = "idealista7.p.rapidapi.com";
+    // Numero maximo de busquedas recientes a mostrar en el historial
+    private static final int LIMITE_HISTORIAL = 3;
+
+    // API Key cargada desde variable de entorno
+    @Value("${rapidapi.key}")
+    private String apiKey;
+
+    @Value("${rapidapi.host:idealista7.p.rapidapi.com}")
+    private String apiHost;
 
     private final List<String> PROVINCIAS = Arrays.asList(
             "Alava", "Albacete", "Alicante", "Almeria", "Asturias", "Avila", "Badajoz", "Baleares",
@@ -53,7 +62,6 @@ public class HabitaxController {
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password, HttpSession session, Model model) {
         Usuario user = usuarioRepo.findByEmail(email);
-        // Comparamos la contrasena escrita contra el hash BCrypt almacenado
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
             session.setAttribute("usuarioLogueado", user);
             return "redirect:/predictor";
@@ -66,19 +74,31 @@ public class HabitaxController {
     public String predictor(HttpSession session, Model model) {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
+
         model.addAttribute("provincias", PROVINCIAS);
         model.addAttribute("nombreUsuario", user.getNombre());
-        model.addAttribute("historial", prediccionRepo.findAll());
+        model.addAttribute("historial",
+                prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
         return "index";
     }
 
+    /**
+     * Protegido por sesion: solo responde si el usuario esta autenticado.
+     * Evita que terceros consuman nuestra cuota de RapidAPI desde fuera.
+     */
     @GetMapping("/api/zonas")
     @ResponseBody
-    public List<String> obtenerZonas(@RequestParam String provincia) {
+    public List<String> obtenerZonas(@RequestParam String provincia, HttpSession session) {
+        // Proteccion: solo usuarios logueados pueden usar este endpoint
+        Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
+        if (user == null) {
+            return List.of();
+        }
+
         String busqueda = Normalizer.normalize(provincia, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 
-        String url = "https://idealista7.p.rapidapi.com/getsuggestions" +
+        String url = "https://" + apiHost + "/getsuggestions" +
                 "?prefix=" + busqueda +
                 "&location=es" +
                 "&propertyType=homes" +
@@ -86,8 +106,8 @@ public class HabitaxController {
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-rapidapi-key", API_KEY);
-        headers.set("x-rapidapi-host", API_HOST);
+        headers.set("x-rapidapi-key", apiKey);
+        headers.set("x-rapidapi-host", apiHost);
 
         try {
             HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -106,7 +126,7 @@ public class HabitaxController {
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            System.err.println("Error al obtener zonas: " + e.getMessage());
             return List.of("Error al cargar zonas");
         }
     }
@@ -121,7 +141,7 @@ public class HabitaxController {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        String url = "https://idealista7.p.rapidapi.com/listhomes?locationName=" + zona +
+        String url = "https://" + apiHost + "/listhomes?locationName=" + zona +
                 "&operation=sale&location=es&locale=es&numPage=1&maxItems=30";
 
         if (habitaciones > 0) url += "&rooms=" + habitaciones;
@@ -129,8 +149,8 @@ public class HabitaxController {
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-rapidapi-key", API_KEY);
-        headers.set("x-rapidapi-host", API_HOST);
+        headers.set("x-rapidapi-key", apiKey);
+        headers.set("x-rapidapi-host", apiHost);
 
         double resultadoFinal = 0;
         try {
@@ -150,17 +170,19 @@ public class HabitaxController {
                 resultadoFinal = (sumaM2 / total) * metros;
             }
         } catch (Exception e) {
+            System.err.println("Error al consultar Idealista: " + e.getMessage());
             resultadoFinal = metros * 3500.0;
         }
 
-        prediccionRepo.save(new Prediccion(zona, metros, habitaciones, banos, resultadoFinal));
+        prediccionRepo.save(new Prediccion(user.getId(), zona, metros, habitaciones, banos, resultadoFinal));
 
         model.addAttribute("resultado", resultadoFinal);
         model.addAttribute("zonaSeleccionada", zona);
         model.addAttribute("metrosIngresados", metros);
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("provincias", PROVINCIAS);
-        model.addAttribute("historial", prediccionRepo.findAll());
+        model.addAttribute("historial",
+                prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
         return "index";
     }
 
@@ -175,7 +197,6 @@ public class HabitaxController {
 
     @PostMapping("/registro")
     public String registrarUsuario(@RequestParam String nombre, @RequestParam String email, @RequestParam String password, Model model) {
-        // Ciframos la contrasena con BCrypt antes de guardarla en BD
         String passwordHash = passwordEncoder.encode(password);
         usuarioRepo.save(new Usuario(nombre, email, passwordHash));
         return "login";
