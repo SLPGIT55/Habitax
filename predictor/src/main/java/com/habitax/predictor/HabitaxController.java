@@ -164,7 +164,7 @@ public class HabitaxController {
 
         // --- TAREA 3: LÓGICA DE CACHÉ (1 HORA) ---
         java.time.LocalDateTime haceUnaHora = java.time.LocalDateTime.now().minusHours(1);
-        
+
         // Verificamos si existe una búsqueda idéntica reciente
         List<Prediccion> busquedasRecientes = prediccionRepo
                 .findByUsuarioIdAndZonaAndMetrosAndFechaAfter(user.getId(), zona, metros, haceUnaHora);
@@ -178,7 +178,7 @@ public class HabitaxController {
         } else {
             // ESCENARIO B: No hay caché. Llamada a la API de Idealista
             String busquedaPrecisa = provincia + " " + zona; // TAREA 2.1: Precisión
-            
+
             String url = "https://" + apiHost + "/listhomes?locationName=" + busquedaPrecisa +
                     "&operation=sale&location=es&locale=es&numPage=1&maxItems=30";
 
@@ -217,7 +217,7 @@ public class HabitaxController {
 
         // --- TAREA 2.2: LÓGICA DE ALGORITMO (3 PRECIOS) ---
         double precioMedio = resultadoFinal;
-        double precioBarato = resultadoFinal * 0.85; 
+        double precioBarato = resultadoFinal * 0.85;
         double precioPremium = resultadoFinal * 1.25;
 
         // --- TAREA 3.2: HISTORIAL LIMITADO (TOP 3) ---
@@ -228,13 +228,15 @@ public class HabitaxController {
         model.addAttribute("resultado", precioMedio);
         model.addAttribute("precioBarato", precioBarato);
         model.addAttribute("precioPremium", precioPremium);
-        
+
         model.addAttribute("zonaSeleccionada", zona);
         model.addAttribute("metrosIngresados", metros);
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("provincias", PROVINCIAS);
         model.addAttribute("historial", historialTresUltimas);
-        
+        model.addAttribute("habitacionesIngresadas", habitaciones);
+        model.addAttribute("banosIngresados", banos);
+
         return "index";
     }
 
@@ -257,13 +259,22 @@ public class HabitaxController {
     @PostMapping("/favoritos/guardar")
     public String guardarFavorito(@RequestParam String zona, 
                                 @RequestParam int metros, 
-                                @RequestParam double precio, 
+                                @RequestParam double precio,
+                                @RequestParam(required = false) Integer habitaciones,
+                                @RequestParam(required = false) Integer banos,
+                                @RequestParam(defaultValue = "") String barrio,
                                 HttpSession session, Model model) {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
+        if (habitaciones == null) habitaciones = 0;
+        if (banos == null) banos = 0;
+        System.out.println(">>> GUARDAR FAVORITO - habitaciones: " + habitaciones + ", banos: " + banos + ", zona: " + zona); // Check si guarda bien los datos
+
 
         // Guardamos el favorito en la BD
-        Favorito nuevoFav = new Favorito(user.getId(), "Propiedad en " + zona, zona, metros, precio);
+        Favorito nuevoFav = new Favorito(
+                user.getId(), "Propiedad en " + zona, zona, metros, precio, habitaciones, banos, barrio
+        );
         favoritoRepo.save(nuevoFav);
 
         // Cargamos los datos para volver a mostrar el index con el mensaje de éxito
@@ -271,12 +282,14 @@ public class HabitaxController {
         model.addAttribute("resultado", precio);
         model.addAttribute("zonaSeleccionada", zona);
         model.addAttribute("metrosIngresados", metros);
+        model.addAttribute("habitacionesIngresadas", habitaciones);
+        model.addAttribute("banosIngresados", banos);
         model.addAttribute("provincias", PROVINCIAS);
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("historial", 
             prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), org.springframework.data.domain.PageRequest.of(0, 3)));
         
-            // Volvemos a calcular los segmentos para la vista
+        // Volvemos a calcular los segmentos para la vista
         model.addAttribute("resultado", precio);
         model.addAttribute("precioBarato", precio * 0.85);
         model.addAttribute("precioPremium", precio * 1.25);

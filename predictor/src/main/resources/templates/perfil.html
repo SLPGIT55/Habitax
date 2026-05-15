@@ -75,20 +75,29 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0"><i class="fa-solid fa-star text-warning me-2"></i>Mis Favoritos</h5>
             </div>
-            
+
             <div th:each="fav : ${favoritos}" class="fav-card bg-white shadow-sm">
                 <div>
-                    <h6 class="fw-bold mb-1" th:text="${fav.nombrePersonalizado}">Mi futura casa</h6>
-                    <p class="text-muted small mb-0" th:text="${fav.zona} + ' | ' + ${fav.metros} + ' m²'"></p>
+                    <h6 class="fw-bold mb-1" th:text="${fav.nombrePersonalizado}"></h6>
+                    <p class="text-muted small mb-1" th:text="${fav.zona}"></p>
+                    <p class="text-muted small mb-0">
+                        <span th:text="${fav.metros} + ' m²'"></span>
+                        <span th:if="${fav.habitaciones != null and fav.habitaciones > 0}"
+                              th:text="' · ' + ${fav.habitaciones} + ' hab'"></span>
+                        <span th:if="${fav.banos != null and fav.banos > 0}"
+                              th:text="' · ' + ${fav.banos} + ' baños'"></span>
+                    </p>
                 </div>
                 <div class="text-end">
-                    <div class="fw-bold fs-5 text-dark mb-2" th:text="${#numbers.formatDecimal(fav.ultimoPrecio, 0, 'POINT', 0, 'COMMA')} + ' €'">320.000 €</div>
+                    <div class="fw-bold fs-5 text-dark mb-2"
+                         th:text="${#numbers.formatDecimal(fav.ultimoPrecio, 0, 'POINT', 0, 'COMMA')} + ' €'">
+                    </div>
                     <form th:action="@{/recalcular}" method="post">
-                    <input type="hidden" name="idFavorito" th:value="${fav.id}">
-                    <button type="submit" class="btn-recalculate">
-                        <i class="fa-solid fa-arrows-rotate me-1"></i> Recalcular
-                    </button>
-                </form>
+                        <input type="hidden" name="idFavorito" th:value="${fav.id}">
+                        <button type="submit" class="btn-recalculate">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i> Recalcular
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

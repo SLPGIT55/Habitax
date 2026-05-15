@@ -90,11 +90,14 @@
                         <input type="hidden" name="zona" th:value="${zonaSeleccionada}">
                         <input type="hidden" name="metros" th:value="${metrosIngresados}">
                         <input type="hidden" name="precio" th:value="${resultado}">
+                        <input type="hidden" name="habitaciones" th:value="${habitacionesIngresadas}">
+                        <input type="hidden" name="banos" th:value="${banosIngresados}">
+                        <input type="hidden" name="barrio" th:value="${zonaSeleccionada}">
                         <button class="btn btn-dark rounded-pill px-5">GUARDAR FAVORITO</button>
                     </form>
                 </div>
 
-                <div class="mt-5" th:if="${historial != null and !historial.empty}">
+                <div class="mt-5" th:if="${historial != null and not #lists.isEmpty(historial)}">
                     <h6 class="text-muted fw-bold mb-3 small">ÚLTIMAS CONSULTAS</h6>
                     <div th:each="h : ${historial}" class="history-list-item shadow-sm">
                         <span class="fw-bold" th:text="${h.zona}"></span>
