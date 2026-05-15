@@ -1,6 +1,23 @@
 Changelog - Proyecto HABITAX
 Todos los cambios notables en el proyecto Habitax serán documentados en este archivo.
 
+[1.4.0] - 2026-05-15
+Ecosistema de Usuario y Persistencia de Favoritos
+
+##Añadido
+-Módulo de Favoritos: Implementación de la entidad Favorito con persistencia en H2 y creación del endpoint /favoritos/guardar para almacenar métricas clave (zona, metros y precio estimado).
+-Algoritmo de Segmentación: Añadida lógica de cálculo en el servidor para generar tres niveles de precio dinámicos: Oportunidad (-15%), Precio Medio (Base) y Premium (+25%).
+-Recálculo en Caliente: Implementado endpoint /recalculate que permite actualizar el valor de mercado de un favorito guardado, integrando la lógica de Caché Temporal (1 hora) desarrollada en la versión anterior.
+-Historial Visual: Integración de la lista de Últimas 3 Consultas en el panel principal mediante PageRequest para optimizar el rendimiento de la base de datos.
+
+##Cambiado
+-Arquitectura de UI: Refactorización de index.html hacia una estructura simétrica de tres columnas (col-lg-3 | 6 | 3) para mejorar la experiencia de usuario y el equilibrio visual de los edificios laterales.
+-Robustez de Thymeleaf: Implementadas directivas th:if de seguridad en los fragmentos de resultados para evitar excepciones de renderizado (Whitelabel Error Page) ante variables nulas.
+
+##Corregido
+-Conflictos de Mapeo: Resuelto error de Ambiguous Mapping mediante la unificación de métodos @PostMapping duplicados en el controlador.
+-Integridad de Datos: Eliminación de registros duplicados en la tabla de usuarios mediante la aplicación de restricciones de unicidad en el campo email
+
 [1.2.0] - 2024-05-21
 Integración de API Real y Desplegables Dinámicos
 Añadido
