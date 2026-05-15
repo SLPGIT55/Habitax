@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>HABITAX | Mi Perfil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --orange-habitax: #ff6b10; --dark-luxury: #1a1a1a; }
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; color: var(--dark-luxury); }
+        .text-orange { color: var(--orange-habitax); }
+        .bg-orange { background-color: var(--orange-habitax); }
+        
+        /* Estilo Minimalista */
+        .card-habitax { border: none; border-radius: 12px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .profile-header { border-bottom: 2px solid var(--orange-habitax); padding-bottom: 10px; margin-bottom: 30px; }
+        
+        /* Tarjetas de Historial (Tarea 3) */
+        .history-item { border-left: 4px solid var(--orange-habitax); transition: transform 0.2s; }
+        .history-item:hover { transform: translateY(-5px); }
+        
+        /* Favoritos */
+        .fav-card { border-radius: 15px; border: 1px solid #eee; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-recalculate { background: transparent; border: 1px solid var(--orange-habitax); color: var(--orange-habitax); font-weight: 600; padding: 8px 20px; border-radius: 8px; transition: 0.3s; }
+        .btn-recalculate:hover { background: var(--orange-habitax); color: white; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-orange" href="/predictor" style="letter-spacing: 2px;">HABITAX</a>
+        <div class="d-flex">
+            <a href="/predictor" class="btn btn-dark rounded-pill px-4">Buscador</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card-habitax p-4 text-center">
+                <div class="mb-3">
+                    <div class="bg-light d-inline-block p-4 rounded-circle">
+                        <i class="fa-solid fa-user-tie fa-3x text-muted"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold" th:text="${nombreUsuario}">Sandra</h4>
+                <p class="text-muted small">Consultora Inmobiliaria</p>
+                <hr>
+                <div class="text-start">
+                    <p class="mb-1"><i class="fa-solid fa-envelope me-2"></i> <span th:text="${emailUsuario}">sandra@example.com</span></p>
+                    <p class="mb-0"><i class="fa-solid fa-calendar-check me-2"></i> Activa desde 2024</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="profile-header d-flex justify-content-between align-items-end">
+                <h2 class="fw-bold m-0">Mi Actividad</h2>
+                <span class="badge bg-orange px-3 py-2 rounded-pill">Usuario Premium</span>
+            </div>
+
+            <h5 class="mb-3 fw-bold text-muted text-uppercase small" style="letter-spacing: 1px;">Recientes</h5>
+            <div class="row g-3 mb-5">
+                <div th:each="h : ${historial}" class="col-md-4">
+                    <div class="card-habitax history-item p-3">
+                        <small class="text-muted" th:text="${h.zona}">Móstoles</small>
+                        <h5 class="fw-bold text-orange mb-0" th:text="${#numbers.formatDecimal(h.precio, 0, 'POINT', 0, 'COMMA')} + ' €'">315.000 €</h5>
+                        <small class="text-muted" th:text="${h.metros} + ' m²'"></small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0"><i class="fa-solid fa-star text-warning me-2"></i>Mis Favoritos</h5>
+            </div>
+            
+            <div th:each="fav : ${favoritos}" class="fav-card bg-white shadow-sm">
+                <div>
+                    <h6 class="fw-bold mb-1" th:text="${fav.nombrePersonalizado}">Mi futura casa</h6>
+                    <p class="text-muted small mb-0" th:text="${fav.zona} + ' | ' + ${fav.metros} + ' m²'"></p>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold fs-5 text-dark mb-2" th:text="${#numbers.formatDecimal(fav.ultimoPrecio, 0, 'POINT', 0, 'COMMA')} + ' €'">320.000 €</div>
+                    <form th:action="@{/recalcular}" method="post">
+                    <input type="hidden" name="idFavorito" th:value="${fav.id}">
+                    <button type="submit" class="btn-recalculate">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Recalcular
+                    </button>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
