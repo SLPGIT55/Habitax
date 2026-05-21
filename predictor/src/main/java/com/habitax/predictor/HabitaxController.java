@@ -26,23 +26,22 @@ import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class HabitaxController {
-
     @Autowired
     private PrediccionRepository prediccionRepo;
-
     @Autowired
     private UsuarioRepository usuarioRepo;
-
     // BCrypt encoder para cifrar/verificar contrasenas
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    // Numero maximo de busquedas recientes a mostrar en el historial
-    private static final int LIMITE_HISTORIAL = 3;
-
+    // Constantes
+    private static final int    LIMITE_HISTORIAL    = 3; // Numero maximo de busquedas recientes a mostrar en el historial
+    private static final double PRECIO_FALLBACK_M2  = 3500.0;
+    private static final double FACTOR_OPORTUNIDAD  = 0.85;
+    private static final double FACTOR_PREMIUM      = 1.25;
+    private static final int    CACHE_HORAS         = 1;
+    long tiempoInicio = System.currentTimeMillis(); // prueba de cache para ver la mejora
     // API Key cargada desde variable de entorno
     @Value("${rapidapi.key}")
     private String apiKey;
-
     @Value("${rapidapi.host:idealista7.p.rapidapi.com}")
     private String apiHost;
 
@@ -80,19 +79,17 @@ public class HabitaxController {
 
         // LLAMADA CORREGIDA AL REPOSITORIO
         model.addAttribute("historial", 
-            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, 3)));
+            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
 
         return "index";
     }
-
-  
 
    @GetMapping("/perfil")
     public String verPerfil(HttpSession session, Model model) {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        model.addAttribute("historial", prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, 3)));
+        model.addAttribute("historial", prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
         
         // CARGA REAL DE FAVORITOS
         model.addAttribute("favoritos", favoritoRepo.findByUsuarioId(user.getId()));
@@ -162,8 +159,8 @@ public class HabitaxController {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        // --- TAREA 3: LÓGICA DE CACHÉ (1 HORA) ---
-        java.time.LocalDateTime haceUnaHora = java.time.LocalDateTime.now().minusHours(1);
+        // --- LÓGICA DE CACHÉ (1 HORA) ---
+        java.time.LocalDateTime haceUnaHora = java.time.LocalDateTime.now().minusHours(CACHE_HORAS);
 
         // Verificamos si existe una búsqueda idéntica reciente
         List<Prediccion> busquedasRecientes = prediccionRepo
@@ -172,12 +169,12 @@ public class HabitaxController {
         double resultadoFinal = 0;
 
         if (!busquedasRecientes.isEmpty()) {
-            // ESCENARIO A: Recuperamos datos de la base de datos (Caché)
+            // Recuperamos datos de la base de datos (Caché)
             resultadoFinal = busquedasRecientes.get(0).getPrecio();
             System.out.println(">>> Info: Recuperando datos de caché para evitar llamada a API redundante");
         } else {
-            // ESCENARIO B: No hay caché. Llamada a la API de Idealista
-            String busquedaPrecisa = provincia + " " + zona; // TAREA 2.1: Precisión
+            // No hay caché. Llamada a la API de Idealista
+            String busquedaPrecisa = provincia + " " + zona; // Precisión
 
             String url = "https://" + apiHost + "/listhomes?locationName=" + busquedaPrecisa +
                     "&operation=sale&location=es&locale=es&numPage=1&maxItems=30";
@@ -196,33 +193,33 @@ public class HabitaxController {
                 List<Map<String, Object>> casas = (List<Map<String, Object>>) response.getBody().get("elementList");
 
                 if (casas != null && !casas.isEmpty()) {
-                    double sumaM2 = 0;
+                    double sumaPreciosPorMetro = 0;
                     int total = 0;
                     for (Map<String, Object> casa : casas) {
                         if (casa.get("price") != null && casa.get("size") != null) {
-                            sumaM2 += (Double.parseDouble(casa.get("price").toString()) / Double.parseDouble(casa.get("size").toString()));
+                            sumaPreciosPorMetro += Double.parseDouble(casa.get("price").toString()) / Double.parseDouble(casa.get("size").toString());
                             total++;
                         }
                     }
-                    resultadoFinal = (sumaM2 / total) * metros;
+                    resultadoFinal = (sumaPreciosPorMetro / total) * metros;
                 }
             } catch (Exception e) {
                 System.err.println("Error al consultar Idealista: " + e.getMessage());
-                resultadoFinal = metros * 3500.0; // Fallback
+                resultadoFinal = metros * PRECIO_FALLBACK_M2; // Fallback
             }
 
             // Guardamos la nueva predicción (servirá de caché para la siguiente hora)
             prediccionRepo.save(new Prediccion(user.getId(), zona, metros, habitaciones, banos, resultadoFinal));
         }
 
-        // --- TAREA 2.2: LÓGICA DE ALGORITMO (3 PRECIOS) ---
+        // logica precios
         double precioMedio = resultadoFinal;
-        double precioBarato = resultadoFinal * 0.85;
-        double precioPremium = resultadoFinal * 1.25;
+        double precioBarato = resultadoFinal * FACTOR_OPORTUNIDAD;
+        double precioPremium = resultadoFinal * FACTOR_PREMIUM;
 
-        // --- TAREA 3.2: HISTORIAL LIMITADO (TOP 3) ---
+        // logica hsotiral
         List<Prediccion> historialTresUltimas = prediccionRepo
-                .findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, 3));
+                .findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL));
 
         // ENVÍO DE DATOS A LA VISTA
         model.addAttribute("resultado", precioMedio);
@@ -236,6 +233,15 @@ public class HabitaxController {
         model.addAttribute("historial", historialTresUltimas);
         model.addAttribute("habitacionesIngresadas", habitaciones);
         model.addAttribute("banosIngresados", banos);
+
+        // probar si hay mejoras aplicando la cache contra la bbdd
+        long duracion = System.currentTimeMillis() - tiempoInicio;
+        if (!busquedasRecientes.isEmpty()) {
+            System.out.println(">>> CACHE HIT  - Tiempo: " + duracion + "ms");
+        } else {
+            System.out.println(">>> CACHE MISS - Tiempo: " + duracion + "ms");
+        }
+        model.addAttribute("tiempoRespuesta", duracion);
 
         return "index";
     }
@@ -286,13 +292,13 @@ public class HabitaxController {
         model.addAttribute("banosIngresados", banos);
         model.addAttribute("provincias", PROVINCIAS);
         model.addAttribute("nombreUsuario", user.getNombre());
-        model.addAttribute("historial", 
-            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), org.springframework.data.domain.PageRequest.of(0, 3)));
+        model.addAttribute("historial",
+            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
         
         // Volvemos a calcular los segmentos para la vista
         model.addAttribute("resultado", precio);
-        model.addAttribute("precioBarato", precio * 0.85);
-        model.addAttribute("precioPremium", precio * 1.25);
+        model.addAttribute("precioBarato", precio * FACTOR_OPORTUNIDAD);
+        model.addAttribute("precioPremium", precio * FACTOR_PREMIUM);
         
         // Resto de atributos necesarios para index.html
         model.addAttribute("provincias", PROVINCIAS);
@@ -307,26 +313,25 @@ public class HabitaxController {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
-        // 1. Buscamos el favorito guardado
+        // Buscamos el favorito guardado
         Favorito fav = favoritoRepo.findById(idFavorito).orElse(null);
         
         if (fav != null) {
-            // 2. Ejecutamos el recálculo (Aquí puedes llamar a tu lógica de la API)
+            // Ejecutamos el recálculo
             // Por ahora, simulamos la actualización del valor de mercado:
             double precioActualizado = fav.getMetros() * 3250.0; 
             
-            // 3. Guardamos el nuevo precio
+            // Guardamos el nuevo precio
             fav.setUltimoPrecio(precioActualizado);
             favoritoRepo.save(fav);
         }
 
-        // 4. Redirigimos al perfil para ver el cambio reflejado
+        // Redirigimos al perfil para ver el cambio reflejado
         return "redirect:/perfil"; 
     }
-
     
-    
-        @Autowired
+    @Autowired
         private FavoritoRepository favoritoRepo;
 
     }
+
