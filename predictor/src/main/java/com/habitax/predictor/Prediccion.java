@@ -14,12 +14,10 @@ public class Prediccion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     // Asocia la prediccion al usuario que la realizo.
     // Coincide con la columna usuario_id de la tabla (NULLABLE).
     @Column(name = "usuario_id")
     private Long usuarioId;
-
     private String zona;
     private int metros;
     private int habitaciones;

@@ -55,8 +55,10 @@ public class Favorito {
 
     public int getHabitaciones() { return habitaciones; }
     public void setHabitaciones(int h) { this.habitaciones = h; }
+
     public int getBanos() { return banos; }
     public void setBanos(int b) { this.banos = b; }
+
     public String getBarrio() { return barrio; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
 

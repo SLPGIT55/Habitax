@@ -1,52 +1,136 @@
-# Habitax
-Habitax - Predictor Inmobiliario Pro
-Habitax es una aplicación web desarrollada en Java Spring Boot que permite estimar el valor de mercado de una vivienda utilizando datos reales. El proyecto integra la API de Idealista para obtener precios actualizados por metro cuadrado en distintas zonas geográficas.
+# Guia de desarrollo local - Habitax
 
-Funcionalidades
-Consulta en Tiempo Real: Conexión con la API de Idealista (vía RapidAPI) para obtener datos de mercado vigentes.
+## Arrancar la aplicacion (version corta)
 
-Cálculo Inteligente: Algoritmo que promedia el precio/m² de los testigos de la zona para ofrecer una valoración ajustada.
+1. Clonar el repo.
+2. Abrir la carpeta `predictor/` en tu IDE (IntelliJ / VS Code / Eclipse).
+3. Esperar a que Maven descargue dependencias
+4. Ejecutar la clase `PredictorApplication.java` con el boton play.
+5. Abrir en el navegador: http://localhost:8081
 
-Interfaz Moderna: Diseño responsivo creado con Bootstrap 5 y Font Awesome.
+Eso es todo. No hay que configurar variables, perfiles ni nada.
 
-Sistema Anti-Fallos: Incluye lógica de respaldo (fallback) para ofrecer estimaciones base si la API no devuelve resultados o hay problemas de conexión.
+## Que esta pasando por debajo
 
-Tecnologías Utilizadas
-Backend: Java 21 & Spring Boot 3.4.2
+Al arrancar **sin variables de entorno definidas**, Spring Boot:
 
-Frontend: Thymeleaf, HTML5, CSS3 (Bootstrap 5)
+- Detecta que no hay configuracion de MySQL.
+- Usa por defecto una base de datos **H2 en memoria** (se crea vacia cada vez).
+- Arranca la app en el puerto 8081.
 
-Gestión de Dependencias: Maven
+Cuando paras la app, la BD se borra. La proxima vez que arranques, vuelve a crearse limpia. Perfecto para desarrollo rapido.
 
-API Externa: Idealista7 (RapidAPI)
+## Comportamiento segun entorno
 
-Requisitos Previos
-Java SDK 21 o superior.
+| Entorno | Variables | Base de datos | API Idealista |
+|---------|-----------|---------------|---------------|
+| Desarrollo local (IDE) | No definidas | H2 en memoria | No funciona (limitacion conocida) |
+| Acceso de admin a RDS | Se cargan manualmente | MySQL RDS real | Funciona si hay RAPIDAPI_KEY |
+| Produccion (AWS) | Definidas en EB | MySQL RDS real | Funciona |
 
-Maven instalado.
+## Limitacion conocida en local: la API de Idealista
 
-Una API Key de RapidAPI (Suscripción activa a la API de Idealista7).
+Cuando arrancas en local **sin variables de entorno**, el desplegable de zonas/barrios **no funciona** y te saldra un error al cargar zonas. Esto es esperado.
 
-Configuración e Instalación
-Clonar el repositorio:
+### Por que
 
-Bash
+La consulta de barrios llama a la API de Idealista (RapidAPI), que requiere una clave. Por seguridad, la clave **no esta en el repositorio** ni se distribuye al equipo.
 
-git clone https://github.com/tu-usuario/habitax-predictor.git
-Configurar el puerto: Por defecto, la aplicación corre en el puerto 8081 para evitar conflictos de sistema. Puedes cambiarlo en src/main/resources/application.properties:
+### Soluciones
 
-Properties
+**Opcion A: trabajar sin el desplegable de zonas** 
 
-server.port=8081
-Configurar la API Key: En el archivo HabitaxController.java, localiza la línea de los headers y pega tu clave:
+Puedes desarrollar cualquier funcionalidad que no dependa del autocomplete de zonas: login, registro, historial, favoritos, perfil, etc. El resto de la app funciona con normalidad usando la BD H2.
 
-Java
+**Opcion B: pedir las variables de entorno**
 
-headers.set("x-rapidapi-key", "TU_CLAVE_AQUI"); 
+Si tu tarea requiere probar con datos reales de Idealista, pide al responsable de infra el script `habitax-env.sh` con las variables necesarias. Cargalo antes de arrancar:
 
-Cómo ejecutarlo
-Abre el proyecto en VS Code.
+```bash
+source ~/habitax-env.sh
+cd predictor
+./mvnw spring-boot:run
+```
 
-Ejecuta la clase PredictorApplication.java.
+Con esas variables cargadas, la app conectara a **MySQL RDS real** (ojo: trabajas sobre la misma BD que produccion) y la API de Idealista funcionara.
 
-Abre tu navegador en: http://localhost:8081
+## Requisitos previos
+
+- **Java 17 o superior**. Recomendado **Java 21** (Corretto).
+- **Maven** (incluido en el proyecto como `mvnw`, no hace falta instalar).
+- **Git** para clonar el repo.
+- Un IDE: IntelliJ IDEA, VS Code (con extension Java), o Eclipse.
+
+Comprueba tu Java:
+```bash
+java -version
+```
+
+## Arrancar desde IntelliJ IDEA
+
+1. File -> Open -> selecciona la carpeta `predictor/`.
+2. Espera a que indexe el proyecto.
+3. Abre `src/main/java/com/example/predictor/PredictorApplication.java`.
+4. Click derecho -> Run 'PredictorApplication'.
+5. Al arrancar, abrir http://localhost:8081.
+
+## Arrancar desde VS Code
+
+1. Instala la extension "Extension Pack for Java" si no la tienes.
+2. File -> Open Folder -> selecciona la carpeta `predictor/`.
+3. Espera a que VS Code indexe el proyecto.
+4. Abre `PredictorApplication.java`.
+5. Pulsa el icono "Run" sobre el metodo `main`.
+6. Al arrancar, abrir http://localhost:8081.
+
+## Arrancar desde terminal (alternativa)
+
+```bash
+cd predictor
+./mvnw spring-boot:run
+```
+
+(En Windows: `mvnw.cmd spring-boot:run`)
+
+## Como probar que funciona
+
+1. Arranca la app.
+2. Ve a http://localhost:8081 -> debe aparecer el login.
+3. Registra un usuario: test@test.com / Test1234.
+4. Haz login con ese mismo usuario.
+5. Navega por la app (perfil, historial vacio, etc.).
+
+Si intentas hacer una busqueda de predicciones, te dara error al cargar zonas. Es normal en local sin variables (ver limitacion conocida arriba).
+
+## Consola H2 (inspeccionar la BD en vivo)
+
+Mientras la app esta corriendo:
+
+- URL: http://localhost:8081/h2-console
+- JDBC URL: `jdbc:h2:mem:habitax`
+- User Name: `sa`
+- Password: (dejar vacio)
+
+Pulsar **Connect** y ejecutar queries:
+
+```sql
+SELECT * FROM USUARIO;
+SELECT * FROM PREDICCION;
+```
+
+## Flujo de trabajo recomendado
+
+1. Crea rama de trabajo:
+   ```
+   git checkout -b feature/mi-funcionalidad
+   ```
+2. Desarrolla y prueba en tu IDE.
+3. Commit y push:
+   ```
+   git add .
+   git commit -m "feat: descripcion corta"
+   git push origin feature/mi-funcionalidad
+   ```
+4. Abre Pull Request en GitHub hacia `main`.
+5. Al mergear, CodePipeline despliega automaticamente en AWS (~5-7 min).
+6. Verifica en la URL de AWS que tu cambio funciona con datos reales.
