@@ -1,7 +1,11 @@
 package com.habitax.predictor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import com.habitax.predictor.model.Favorito;
 
 public class HabitaxTest {
 

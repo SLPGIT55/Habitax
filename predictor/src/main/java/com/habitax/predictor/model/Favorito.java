@@ -1,4 +1,4 @@
-package com.habitax.predictor;
+package com.habitax.predictor.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 
 @Entity
 public class Favorito {
+
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,14 +19,15 @@ public class Favorito {
     private int habitaciones;
     private int banos;
     private String barrio;
+    private String provincia;
 
-    // Constructor vacío requerido por JPA
-    public Favorito() {}
+    public Favorito() {
+    }
 
-    // Constructor útil para crear favoritos rápido
-    public Favorito(Long usuarioId, String nombrePersonalizado, String zona, int metros, double ultimoPrecio, int habitaciones, int banos, String barrio) {
+    public Favorito(Long usuarioId, String nombrePersonalizado, String provincia, String zona, int metros, double ultimoPrecio, int habitaciones, int banos, String barrio) {
         this.usuarioId = usuarioId;
         this.nombrePersonalizado = nombrePersonalizado;
+        this.provincia = provincia;
         this.zona = zona;
         this.metros = metros;
         this.ultimoPrecio = ultimoPrecio;
@@ -62,4 +64,6 @@ public class Favorito {
     public String getBarrio() { return barrio; }
     public void setBarrio(String barrio) { this.barrio = barrio; }
 
+    public String getProvincia() { return provincia; }
+    public void setProvincia(String provincia) { this.provincia = provincia; }
 }
