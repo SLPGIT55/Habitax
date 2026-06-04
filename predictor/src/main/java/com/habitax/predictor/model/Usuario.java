@@ -1,14 +1,14 @@
 package com.habitax.predictor.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
+@Table(name = "usuario", indexes = {
+        @Index(name = "idx_usuario_email", columnList = "email")
+})
 public class Usuario {
 
     @Id
@@ -22,6 +22,7 @@ public class Usuario {
 
     @NotBlank(message = "El email no puede estar vacío")
     @Email(message = "El formato del correo electrónico no es válido")
+    @Column(unique = true)
     private String email;
 
     @NotBlank(message = "La contraseña no puede estar vacía")

@@ -29,7 +29,7 @@ public class Favorito {
     public Favorito() {
     }
 
-    public Favorito(Long usuarioId, String nombrePersonalizado, String provincia, String zona, int metros, double ultimoPrecio, int habitaciones, int banos, String barrio) {
+    public Favorito(Long usuarioId, String nombrePersonalizado, String zona, String provincia, int metros, double ultimoPrecio, int habitaciones, int banos, String barrio) {
         this.usuarioId = usuarioId;
         this.nombrePersonalizado = nombrePersonalizado;
         this.provincia = provincia;

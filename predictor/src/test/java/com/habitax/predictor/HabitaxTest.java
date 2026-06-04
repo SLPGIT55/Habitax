@@ -34,7 +34,7 @@ public class HabitaxTest {
 	@Test
 	public void testConstructorFavorito() {
 		Favorito fav = new Favorito(
-				1L, "Mi casa", "Madrid", 80, 280000.0, 2, 1, "Centro");
+				1L, "Test", "Madrid", "Barrio", 80, 280000.0, 2, 1, "Centro");
 
 		assertEquals(1L,        fav.getUsuarioId());
 		assertEquals("Madrid",  fav.getZona());
@@ -48,7 +48,7 @@ public class HabitaxTest {
 	@Test
 	public void testFavoritoNoGuardaCeros() {
 		Favorito fav = new Favorito(
-				1L, "Test", "Barcelona", 90, 300000.0, 3, 2, "Eixample");
+				1L, "Test", "Cataluña", "Barcelona", 90, 300000.0, 3, 2, "Eixample");
 
 		assertNotEquals(0, fav.getHabitaciones());
 		assertNotEquals(0, fav.getBanos());

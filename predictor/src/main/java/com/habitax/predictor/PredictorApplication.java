@@ -1,5 +1,6 @@
 package com.habitax.predictor;
 
+import com.habitax.predictor.controller.StartupController;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +11,7 @@ public class PredictorApplication {
 
     public static void main(String[] args) {
         // Mostrar dialogo ANTES de que Spring Boot inicialice
-        StartupDialog.mostrar();
+        StartupController.mostrar();
 
         SpringApplication.run(PredictorApplication.class, args);
     }

@@ -1,4 +1,4 @@
-package com.habitax.predictor;
+package com.habitax.predictor.controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -6,7 +6,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.concurrent.CountDownLatch;
 
-public class StartupDialog {
+public class StartupController {
 
     public static void mostrar() {
         // Solo mostrar si no hay variables de entorno configuradas
