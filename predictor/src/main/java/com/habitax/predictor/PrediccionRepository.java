@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PrediccionRepository extends JpaRepository<Prediccion, Long> {
     
-    // Para el historial (Tarea 3)
+    // Para el historial
     List<Prediccion> findByUsuarioIdOrderByFechaDesc(Long usuarioId, Pageable pageable);
 
-    // Para la caché (Tarea 3)
+    // Para la caché
     List<Prediccion> findByUsuarioIdAndZonaAndMetrosAndFechaAfter(
         Long usuarioId, String zona, int metros, LocalDateTime fecha);
 }

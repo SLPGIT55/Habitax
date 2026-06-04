@@ -4,8 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "favorito", indexes = {
+        @Index(name = "idx_favorito_usuario", columnList = "usuario_id")
+})
 public class Favorito {
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -61,6 +61,18 @@
                         <div class="col-md-4"><input type="number" name="habitaciones" class="form-control rounded-pill" placeholder="Hab."></div>
                         <div class="col-md-4"><input type="number" name="banos" class="form-control rounded-pill" placeholder="Baños"></div>
                     </div>
+                    <!-- Disclaimer sin API Key -->
+                    <div th:if="${sinApiKey}" class="alert mb-4 rounded-3"
+                         style="background:#FFF8E1; border-left: 4px solid #FFC107; color:#856404;">
+                        <strong>⚠ Modo sin API configurada</strong><br>
+                        <small>
+                            Las busquedas no consultaran datos reales de Idealista.
+                            Los precios mostrados seran estimaciones fijas basadas en
+                            <strong>metros × 3.500 €/m²</strong>.
+                            Para usar datos reales, reinicia la app e introduce tu API Key
+                            en la pantalla de configuracion.
+                        </small>
+                    </div>
                     <button type="submit" class="btn btn-orange w-100 mt-4 py-3 fw-bold">ANALIZAR MERCADO</button>
                 </form>
 
