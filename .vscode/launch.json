@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "PredictorApplication",
+            "request": "launch",
+            "mainClass": "com.habitax.predictor.PredictorApplication",
+            "env": {
+                "RAPIDAPI_KEY": "f6d6ea3df2msh6e78596b39fbc81p1aa67ejsnb83fc12344e5",
+                "RAPIDAPI_HOST": "idealista7.p.rapidapi.com"
+            }
+        }
+    ]
+}
