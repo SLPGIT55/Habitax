@@ -32,6 +32,9 @@
                     <span id="passwordError"></span>
                     
                     <button type="submit" class="btn btn-orange w-100">REGISTRARSE</button>
+
+                    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
                 </form>
                 
                 <hr>

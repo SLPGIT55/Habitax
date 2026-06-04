@@ -152,4 +152,9 @@ public class PrecioService {
 
         return resultadoFinal;
     }
+
+    // para comprobar en desarrollo
+    public boolean tieneApiKey() {
+        return apiKey != null && !apiKey.trim().isEmpty();
+    }
 }

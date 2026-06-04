@@ -183,6 +183,7 @@ public class StartupController {
                 }
                 // Marcar modo desarrollo para que Spring arranque con H2
                 System.setProperty("MODO_DESARROLLO", "true");
+                System.setProperty("H2_CONSOLE_ENABLED", "true");
                 latch.countDown(); // libera el bloqueo al hilo principal
                 frame.dispose();
             });

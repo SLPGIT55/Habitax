@@ -46,7 +46,6 @@ public class HabitaxController {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     private static final int LIMITE_HISTORIAL = 3;
-    private String apiKey;
 
     private final List<String> PROVINCIAS = Arrays.asList(
             "Alava", "Albacete", "Alicante", "Almeria", "Asturias", "Avila", "Badajoz", "Baleares",
@@ -107,7 +106,7 @@ public class HabitaxController {
 
         // Aviso si no hay API Key configurada
         boolean tieneApiKey = Boolean.TRUE.equals(session.getAttribute("tieneApiKey"))
-                || (apiKey != null && !apiKey.trim().isEmpty());
+                || precioService.tieneApiKey();
         model.addAttribute("sinApiKey", !tieneApiKey);
 
         return "index";
@@ -169,7 +168,7 @@ public class HabitaxController {
         model.addAttribute("historial", obtenerHistorialDTO(user.getId()));
 
         boolean tieneApiKey = Boolean.TRUE.equals(session.getAttribute("tieneApiKey"))
-                || (apiKey != null && !apiKey.trim().isEmpty());
+                || precioService.tieneApiKey();
         model.addAttribute("sinApiKey", !tieneApiKey);
 
         return "index";

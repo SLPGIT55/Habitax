@@ -100,6 +100,7 @@
                     
                     <form th:action="@{/favoritos/guardar}" method="post" class="text-center">
                         <input type="hidden" name="zona" th:value="${zonaSeleccionada}">
+                        <input type="hidden" name="provincia" th:value="${provinciaSeleccionada}">
                         <input type="hidden" name="metros" th:value="${metrosIngresados}">
                         <input type="hidden" name="precio" th:value="${resultado}">
                         <input type="hidden" name="habitaciones" th:value="${habitacionesIngresadas}">
