@@ -93,10 +93,11 @@
                          th:text="${#numbers.formatDecimal(fav.ultimoPrecio, 0, 'POINT', 0, 'COMMA')} + ' €'">
                     </div>
                     <form th:action="@{/recalcular}" method="post">
-                        <input type="hidden" name="idFavorito" th:value="${fav.id}">
-                        <button type="submit" class="btn-recalculate">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i> Recalcular
-                        </button>
+                        <input type="hidden" name="idFavorito" th:value="${fav.id}" />
+                        
+                        <input type="hidden" name="provincia" th:value="${provinciaSeleccionada != null ? provinciaSeleccionada : 'Madrid'}" />
+                        
+                        <button type="submit" class="btn btn-primary">Recalcular Precio</button>
                     </form>
                 </div>
             </div>

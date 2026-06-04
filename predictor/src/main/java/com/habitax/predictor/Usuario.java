@@ -1,19 +1,16 @@
 package com.habitax.predictor;
 
-import jakarta.persistence.*;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
-@Table(name = "usuario", indexes = {
-        @Index(name = "idx_usuario_email", columnList = "email")
-})
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nombre;
-    @Column(unique = true)
     private String email;
     private String password;
 

@@ -1,4 +1,4 @@
-package com.habitax.predictor;
+package com.habitax.predictor.model;
 
 import java.time.LocalDateTime;
 

@@ -38,6 +38,7 @@ public class HabitaxController {
     private static final double FACTOR_OPORTUNIDAD  = 0.85;
     private static final double FACTOR_PREMIUM      = 1.25;
     private static final int    CACHE_HORAS         = 1;
+    long tiempoInicio = System.currentTimeMillis(); // prueba de cache para ver la mejora
     // API Key cargada desde variable de entorno
     @Value("${rapidapi.key}")
     private String apiKey;
@@ -55,7 +56,7 @@ public class HabitaxController {
     );
 
     @GetMapping("/")
-    public String loginPage() {return "login";}
+    public String loginPage() { return "login"; }
 
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password, HttpSession session, Model model) {
@@ -68,21 +69,17 @@ public class HabitaxController {
         return "login";
     }
 
-    @GetMapping("/predictor")
+   @GetMapping("/predictor")
     public String mostrarPredictor(Model model, HttpSession session) {
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
 
         model.addAttribute("nombreUsuario", user.getNombre());
-        model.addAttribute("provincias", PROVINCIAS);
-        model.addAttribute("historial",
-                prediccionRepo.findByUsuarioIdOrderByFechaDesc(
-                        user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
+        model.addAttribute("provincias", PROVINCIAS); // Asegúrate de que se llame así
 
-        // Aviso si no hay API Key configurada
-        boolean tieneApiKey = Boolean.TRUE.equals(session.getAttribute("tieneApiKey"))
-                || (apiKey != null && !apiKey.trim().isEmpty());
-        model.addAttribute("sinApiKey", !tieneApiKey);
+        // LLAMADA CORREGIDA AL REPOSITORIO
+        model.addAttribute("historial", 
+            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
 
         return "index";
     }
@@ -93,10 +90,10 @@ public class HabitaxController {
         if (user == null) return "redirect:/";
 
         model.addAttribute("historial", prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
-
+        
         // CARGA REAL DE FAVORITOS
         model.addAttribute("favoritos", favoritoRepo.findByUsuarioId(user.getId()));
-
+        
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("emailUsuario", user.getEmail());
 
@@ -158,7 +155,6 @@ public class HabitaxController {
                                     @RequestParam int habitaciones,
                                     @RequestParam int banos,
                                     HttpSession session, Model model) {
-        long tiempoInicio = System.currentTimeMillis();
 
         Usuario user = (Usuario) session.getAttribute("usuarioLogueado");
         if (user == null) return "redirect:/";
@@ -247,10 +243,6 @@ public class HabitaxController {
         }
         model.addAttribute("tiempoRespuesta", duracion);
 
-        boolean tieneApiKey = Boolean.TRUE.equals(session.getAttribute("tieneApiKey"))
-                || (apiKey != null && !apiKey.trim().isEmpty());
-        model.addAttribute("sinApiKey", !tieneApiKey);
-
         return "index";
     }
 
@@ -271,8 +263,8 @@ public class HabitaxController {
     }
 
     @PostMapping("/favoritos/guardar")
-    public String guardarFavorito(@RequestParam String zona,
-                                @RequestParam int metros,
+    public String guardarFavorito(@RequestParam String zona, 
+                                @RequestParam int metros, 
                                 @RequestParam double precio,
                                 @RequestParam(required = false) Integer habitaciones,
                                 @RequestParam(required = false) Integer banos,
@@ -282,7 +274,8 @@ public class HabitaxController {
         if (user == null) return "redirect:/";
         if (habitaciones == null) habitaciones = 0;
         if (banos == null) banos = 0;
-        System.out.println("[INFO] Favorito guardado - zona: " + zona + ", metros: " + metros);
+        System.out.println(">>> GUARDAR FAVORITO - habitaciones: " + habitaciones + ", banos: " + banos + ", zona: " + zona); // Check si guarda bien los datos
+
 
         // Guardamos el favorito en la BD
         Favorito nuevoFav = new Favorito(
@@ -290,10 +283,9 @@ public class HabitaxController {
         );
         favoritoRepo.save(nuevoFav);
 
+        // Cargamos los datos para volver a mostrar el index con el mensaje de éxito
         model.addAttribute("mensajeExito", "¡Propiedad añadida a tus favoritos!");
         model.addAttribute("resultado", precio);
-        model.addAttribute("precioBarato", precio * FACTOR_OPORTUNIDAD);
-        model.addAttribute("precioPremium", precio * FACTOR_PREMIUM);
         model.addAttribute("zonaSeleccionada", zona);
         model.addAttribute("metrosIngresados", metros);
         model.addAttribute("habitacionesIngresadas", habitaciones);
@@ -301,10 +293,20 @@ public class HabitaxController {
         model.addAttribute("provincias", PROVINCIAS);
         model.addAttribute("nombreUsuario", user.getNombre());
         model.addAttribute("historial",
-                prediccionRepo.findByUsuarioIdOrderByFechaDesc(
-                        user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
-
-        return "index";
+            prediccionRepo.findByUsuarioIdOrderByFechaDesc(user.getId(), PageRequest.of(0, LIMITE_HISTORIAL)));
+        
+        // Volvemos a calcular los segmentos para la vista
+        model.addAttribute("resultado", precio);
+        model.addAttribute("precioBarato", precio * FACTOR_OPORTUNIDAD);
+        model.addAttribute("precioPremium", precio * FACTOR_PREMIUM);
+        
+        // Resto de atributos necesarios para index.html
+        model.addAttribute("provincias", PROVINCIAS);
+        model.addAttribute("nombreUsuario", user.getNombre());
+        model.addAttribute("zonaSeleccionada", zona);
+        model.addAttribute("metrosIngresados", metros);
+        model.addAttribute("mensajeExito", "¡Propiedad añadida a favoritos!");
+            return "index"; 
     }
     @PostMapping("/recalcular")
     public String recalcularFavorito(@RequestParam Long idFavorito, HttpSession session) {
@@ -313,21 +315,21 @@ public class HabitaxController {
 
         // Buscamos el favorito guardado
         Favorito fav = favoritoRepo.findById(idFavorito).orElse(null);
-
+        
         if (fav != null) {
             // Ejecutamos el recálculo
             // Por ahora, simulamos la actualización del valor de mercado:
-            double precioActualizado = fav.getMetros() * 3250.0;
-
+            double precioActualizado = fav.getMetros() * 3250.0; 
+            
             // Guardamos el nuevo precio
             fav.setUltimoPrecio(precioActualizado);
             favoritoRepo.save(fav);
         }
 
         // Redirigimos al perfil para ver el cambio reflejado
-        return "redirect:/perfil";
+        return "redirect:/perfil"; 
     }
-
+    
     @Autowired
         private FavoritoRepository favoritoRepo;
 
