@@ -1,136 +1,216 @@
-# Guia de desarrollo local - Habitax
+# HABITAX — Predictor Inmobiliario
 
-## Arrancar la aplicacion (version corta)
+Sistema web de estimación de precios inmobiliarios para el mercado español.
+El usuario introduce provincia, zona, metros cuadrados, habitaciones y baños y recibe tres estimaciones de precio: **Oportunidad (-15%)**, **Precio Medio** y **Premium (+25%)**, calculadas con datos en tiempo real de la API de Idealista.
 
-1. Clonar el repo.
-2. Abrir la carpeta `predictor/` en tu IDE (IntelliJ / VS Code / Eclipse).
-3. Esperar a que Maven descargue dependencias
-4. Ejecutar la clase `PredictorApplication.java` con el boton play.
-5. Abrir en el navegador: http://localhost:8081
+---
 
-Eso es todo. No hay que configurar variables, perfiles ni nada.
+## 🌐 Acceso a producción (AWS)
 
-## Que esta pasando por debajo
+**URL:** http://habitax-env.eba-yrbph7mf.eu-west-1.elasticbeanstalk.com
 
-Al arrancar **sin variables de entorno definidas**, Spring Boot:
+Desplegado en AWS Elastic Beanstalk (eu-west-1, Irlanda).
+Cada push a `main` despliega automáticamente vía CodePipeline → CodeBuild (~5-7 min).
 
-- Detecta que no hay configuracion de MySQL.
-- Usa por defecto una base de datos **H2 en memoria** (se crea vacia cada vez).
-- Arranca la app en el puerto 8081.
+---
 
-Cuando paras la app, la BD se borra. La proxima vez que arranques, vuelve a crearse limpia. Perfecto para desarrollo rapido.
+## ⚡ Arrancar en local (versión corta)
 
-## Comportamiento segun entorno
+```bash
+# 1. Clonar
+git clone https://github.com/SLPGIT55/Habitax.git
+
+# 2. Abrir la carpeta predictor/ en IntelliJ / VS Code / Eclipse
+
+# 3. Ejecutar PredictorApplication.java con el botón Play
+
+# 4. Aparecerá una ventana de configuración — elegir modo (ver abajo)
+
+# 5. Abrir en el navegador
+http://localhost:8081
+```
+
+---
+
+## 🖥️ Ventana de configuración al arrancar
+
+Al ejecutar la app **sin variables de entorno definidas**, aparece automáticamente una ventana nativa antes de que Spring Boot inicialice. Hay que elegir entre dos modos:
+
+### Opción A — Modo desarrollo (H2 en memoria)
+- La base de datos se crea vacía en cada arranque y se borra al cerrar.
+- Puedes introducir opcionalmente tu API Key de RapidAPI para que el desplegable de zonas funcione.
+- Sin API Key, el desplegable de zonas dará error (limitación conocida, el resto de la app funciona con normalidad).
+- Ideal para: login, registro, historial, favoritos, perfil.
+
+### Opción B — Conectar a producción (MySQL RDS)
+- Haz clic en `...` para seleccionar tu fichero de variables de entorno desde el explorador.
+- En Mac/Linux: `~/habitax-env.sh` — En Windows: `C:\Users\TuUsuario\habitax-env.bat`
+- La app conectará a la BD real de AWS. **Ojo: trabajas sobre los mismos datos que producción.**
+- Pide el fichero de variables al responsable de infraestructura si no lo tienes.
+
+> Si la variable `SPRING_DATASOURCE_URL` ya está definida en tu entorno (por haber ejecutado `source ~/habitax-env.sh` antes), la ventana no aparece y la app arranca directamente en modo producción.
+
+---
+
+## 📋 Comportamiento según entorno
 
 | Entorno | Variables | Base de datos | API Idealista |
 |---------|-----------|---------------|---------------|
-| Desarrollo local (IDE) | No definidas | H2 en memoria | No funciona (limitacion conocida) |
-| Acceso de admin a RDS | Se cargan manualmente | MySQL RDS real | Funciona si hay RAPIDAPI_KEY |
-| Produccion (AWS) | Definidas en EB | MySQL RDS real | Funciona |
+| Local — modo desarrollo | No definidas | H2 en memoria | Solo con API Key en el dialog |
+| Local — modo producción | Cargadas desde fichero .env | MySQL RDS real | Funciona |
+| AWS Elastic Beanstalk | Definidas en EB | MySQL RDS real | Funciona |
 
-## Limitacion conocida en local: la API de Idealista
+---
 
-Cuando arrancas en local **sin variables de entorno**, el desplegable de zonas/barrios **no funciona** y te saldra un error al cargar zonas. Esto es esperado.
+## ✅ Requisitos previos
 
-### Por que
-
-La consulta de barrios llama a la API de Idealista (RapidAPI), que requiere una clave. Por seguridad, la clave **no esta en el repositorio** ni se distribuye al equipo.
-
-### Soluciones
-
-**Opcion A: trabajar sin el desplegable de zonas** 
-
-Puedes desarrollar cualquier funcionalidad que no dependa del autocomplete de zonas: login, registro, historial, favoritos, perfil, etc. El resto de la app funciona con normalidad usando la BD H2.
-
-**Opcion B: pedir las variables de entorno**
-
-Si tu tarea requiere probar con datos reales de Idealista, pide al responsable de infra el script `habitax-env.sh` con las variables necesarias. Cargalo antes de arrancar:
+- Java 17 o superior (recomendado Java 21 Corretto)
+- Maven — incluido en el proyecto como `mvnw`, no hace falta instalarlo
+- Git
+- IDE: IntelliJ IDEA, VS Code (con Extension Pack for Java) o Eclipse
 
 ```bash
-source ~/habitax-env.sh
-cd predictor
-./mvnw spring-boot:run
-```
-
-Con esas variables cargadas, la app conectara a **MySQL RDS real** (ojo: trabajas sobre la misma BD que produccion) y la API de Idealista funcionara.
-
-## Requisitos previos
-
-- **Java 17 o superior**. Recomendado **Java 21** (Corretto).
-- **Maven** (incluido en el proyecto como `mvnw`, no hace falta instalar).
-- **Git** para clonar el repo.
-- Un IDE: IntelliJ IDEA, VS Code (con extension Java), o Eclipse.
-
-Comprueba tu Java:
-```bash
+# Comprobar Java
 java -version
 ```
 
-## Arrancar desde IntelliJ IDEA
+---
 
-1. File -> Open -> selecciona la carpeta `predictor/`.
-2. Espera a que indexe el proyecto.
-3. Abre `src/main/java/com/example/predictor/PredictorApplication.java`.
-4. Click derecho -> Run 'PredictorApplication'.
-5. Al arrancar, abrir http://localhost:8081.
+## 🚀 Arrancar desde cada IDE
 
-## Arrancar desde VS Code
+### IntelliJ IDEA
+1. `File → Open` → selecciona la carpeta `predictor/`
+2. Espera a que Maven descargue dependencias
+3. Abre `src/main/java/com/habitax/predictor/PredictorApplication.java`
+4. Click derecho → `Run 'PredictorApplication'`
+5. Aparece la ventana de configuración — elige modo
+6. Abrir `http://localhost:8081`
 
-1. Instala la extension "Extension Pack for Java" si no la tienes.
-2. File -> Open Folder -> selecciona la carpeta `predictor/`.
-3. Espera a que VS Code indexe el proyecto.
-4. Abre `PredictorApplication.java`.
-5. Pulsa el icono "Run" sobre el metodo `main`.
-6. Al arrancar, abrir http://localhost:8081.
+### VS Code
+1. Instala "Extension Pack for Java" si no la tienes
+2. `File → Open Folder` → selecciona la carpeta `predictor/`
+3. Abre `PredictorApplication.java`
+4. Pulsa el icono `Run` sobre el método `main`
+5. Aparece la ventana de configuración — elige modo
+6. Abrir `http://localhost:8081`
 
-## Arrancar desde terminal (alternativa)
-
+### Terminal
 ```bash
 cd predictor
 ./mvnw spring-boot:run
+# Windows: mvnw.cmd spring-boot:run
 ```
 
-(En Windows: `mvnw.cmd spring-boot:run`)
+---
 
-## Como probar que funciona
+## 🔍 Cómo verificar que funciona
 
-1. Arranca la app.
-2. Ve a http://localhost:8081 -> debe aparecer el login.
-3. Registra un usuario: test@test.com / Test1234.
-4. Haz login con ese mismo usuario.
-5. Navega por la app (perfil, historial vacio, etc.).
+1. Arranca la app y elige modo en la ventana de configuración
+2. Ve a `http://localhost:8081` → debe aparecer el login
+3. Regístrate: `test@test.com` / `Test1234`
+4. Haz login con ese usuario
+5. Navega por la app: perfil, historial, favoritos
+6. Si estás en modo desarrollo sin API Key, el desplegable de zonas dará error al cargar — es normal
 
-Si intentas hacer una busqueda de predicciones, te dara error al cargar zonas. Es normal en local sin variables (ver limitacion conocida arriba).
+---
 
-## Consola H2 (inspeccionar la BD en vivo)
+## 🗄️ Consola H2 (inspeccionar la BD en vivo)
 
-Mientras la app esta corriendo:
+Solo disponible en modo desarrollo. Mientras la app está corriendo:
 
-- URL: http://localhost:8081/h2-console
-- JDBC URL: `jdbc:h2:mem:habitax`
-- User Name: `sa`
-- Password: (dejar vacio)
-
-Pulsar **Connect** y ejecutar queries:
+- **URL:** `http://localhost:8081/habitax-db-panel`
+- **JDBC URL:** `jdbc:h2:mem:habitax`
+- **User Name:** `sa`
+- **Password:** *(dejar vacío)*
 
 ```sql
 SELECT * FROM USUARIO;
 SELECT * FROM PREDICCION;
+SELECT * FROM FAVORITO;
 ```
 
-## Flujo de trabajo recomendado
+---
 
-1. Crea rama de trabajo:
-   ```
-   git checkout -b feature/mi-funcionalidad
-   ```
-2. Desarrolla y prueba en tu IDE.
-3. Commit y push:
-   ```
-   git add .
-   git commit -m "feat: descripcion corta"
-   git push origin feature/mi-funcionalidad
-   ```
-4. Abre Pull Request en GitHub hacia `main`.
-5. Al mergear, CodePipeline despliega automaticamente en AWS (~5-7 min).
-6. Verifica en la URL de AWS que tu cambio funciona con datos reales.
+## 🌿 Flujo de trabajo en equipo
+
+```bash
+# 1. Crear rama de trabajo
+git checkout -b feature/mi-funcionalidad
+
+# 2. Desarrollar y probar en local
+
+# 3. Commit y push
+git add .
+git commit -m "feat: descripción corta"
+git push origin feature/mi-funcionalidad
+
+# 4. Abrir Pull Request en GitHub hacia main
+# Al mergear → CodePipeline despliega automáticamente en AWS (~5-7 min)
+
+# 5. Verificar en la URL de AWS que el cambio funciona con datos reales
+```
+
+> ⚠️ **Antes de mergear a main:** si has añadido columnas nuevas a una entidad JPA, ejecuta primero el `ALTER TABLE` correspondiente en RDS (con MySQL Workbench conectado a la BD de producción). Con `ddl-auto=validate`, Hibernate no arranca si el esquema no coincide.
+
+---
+
+## 🏗️ Estructura del proyecto
+
+```
+predictor/
+├── src/main/java/com/habitax/predictor/
+│   ├── PredictorApplication.java       ← Arranque + dialog Swing
+│   ├── config/
+│   │   └── AppConfig.java              ← RestTemplate con timeouts
+│   ├── controller/
+│   │   ├── HabitaxController.java      ← Rutas HTTP
+│   │   └── StartupController.java      ← Dialog de arranque (Swing)
+│   ├── service/
+│   │   ├── PrecioService.java          ← Caché + API + cálculos
+│   │   ├── LoginRateLimiterService.java ← Protección 
+│   │   └── UsuarioDetailsService.java
+│   ├── model/
+│   │   ├── Usuario.java
+│   │   ├── Prediccion.java
+│   │   └── Favorito.java
+│   ├── repository/
+│   │   ├── UsuarioRepository.java
+│   │   ├── PrediccionRepository.java
+│   │   └── FavoritoRepository.java
+│   └── dto/
+│       ├── UsuarioSesionDTO.java        ← Sin password en sesión
+│       └── PrediccionDTO.java
+├── src/main/resources/
+│   ├── application.properties
+│   └── templates/                      ← Vistas Thymeleaf
+├── buildspec.yml                       ← Configuración CodeBuild
+└── pom.xml
+```
+
+---
+
+## 🔒 Seguridad y credenciales
+
+- **Ningún secreto en el repositorio.** Ni API keys, ni contraseñas de BD, ni en `application.properties`.
+- Las credenciales de producción viven en Elastic Beanstalk Environment Properties.
+- Las credenciales de desarrollo local viven en `~/habitax-env.sh` (no trackeado por Git).
+- Contraseñas de usuario cifradas con BCrypt. Nunca se almacenan en texto plano.
+- Rate limiting: 5 intentos de login fallidos → bloqueo de 15 minutos por email.
+
+---
+
+## 🛠️ Stack tecnológico
+
+| Capa | Tecnología |
+|------|------------|
+| Backend | Java 21 / Spring Boot 3.5.14 / Spring Data JPA |
+| Frontend | Thymeleaf + Bootstrap 5 |
+| BD local | H2 en memoria |
+| BD producción | MySQL 8.4 en AWS RDS (eu-west-1) |
+| Infraestructura | AWS Elastic Beanstalk + CodePipeline + CodeBuild |
+| Pool conexiones | HikariCP (máx. 5 conexiones) |
+| API externa | RapidAPI — Idealista7 |
+
+---
+
+*Habitax — Proyecto de Informática II — Universidad Europea de Madrid — 2025/2026*
